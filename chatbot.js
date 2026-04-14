@@ -1,8 +1,7 @@
 (function() {
-  // Chat widget state
   let isOpen = false;
   let messages = [
-    { role: 'assistant', content: 'Willkommen bei der Zahnarztpraxis Dr. Weber! 👋 Wie kann ich Ihnen helfen? Ich kann Termine vereinbaren, Fragen beantworten oder zu Leistungen beraten.' }
+    { role: 'assistant', content: 'Hallo! 👋 Willkommen bei der Zahnarztpraxis Dr. Weber. Wie kann ich Ihnen helfen?' }
   ];
   let loading = false;
   let msgCount = 0;
@@ -16,212 +15,208 @@
     'Ist das eine echte Praxis?'
   ];
 
-  // Inject styles
   const style = document.createElement('style');
   style.textContent = `
-    #xynoia-chat-widget * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body.xc-chat-open { overflow: hidden; }
-    #xynoia-chat-bubble {
-      position: fixed; bottom: 24px; right: 24px; z-index: 99999;
-      width: 64px; height: 64px; border-radius: 50%;
-      background: linear-gradient(135deg, #45BFA8, #3AA08A);
-      border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 24px rgba(69,191,168,0.4);
-      animation: xynoia-pulse 2s ease-out infinite;
-      transition: transform 0.2s;
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+    #xynoia-chat-widget * { margin:0; padding:0; box-sizing:border-box; font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif; -webkit-tap-highlight-color:transparent; }
+    body.xc-chat-open { overflow:hidden; }
+
+    /* === BUBBLE === */
+    .xc-bubble-wrap { position:fixed; bottom:28px; right:28px; z-index:99999; }
+    .xc-bubble-btn {
+      width:62px; height:62px; border-radius:50%; border:none; cursor:pointer;
+      background:linear-gradient(135deg,#45BFA8,#3AA08A);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 4px 20px rgba(69,191,168,0.35);
+      animation:xc-pulse 2.5s ease-out infinite;
+      transition:transform .2s;
     }
-    #xynoia-chat-bubble:hover { transform: scale(1.1); }
-    #xynoia-chat-bubble svg { width: 28px; height: 28px; }
-    #xynoia-chat-badge {
-      position: absolute; top: -4px; right: -2px;
-      width: 22px; height: 22px; border-radius: 50%;
-      background: #FF4D6A; display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: white; border: 2px solid #0B0E17;
+    .xc-bubble-btn:hover { transform:scale(1.08); }
+    .xc-bubble-btn svg { width:26px; height:26px; stroke:white; fill:none; stroke-width:2; }
+    .xc-badge {
+      position:absolute; top:-3px; right:-1px;
+      width:20px; height:20px; border-radius:50%;
+      background:#FF4D6A; font-size:10px; font-weight:700; color:white;
+      display:flex; align-items:center; justify-content:center;
+      border:2px solid #0B0E17;
     }
-    @keyframes xynoia-pulse {
-      0% { box-shadow: 0 4px 24px rgba(69,191,168,0.4), 0 0 0 0 rgba(69,191,168,0.4); }
-      70% { box-shadow: 0 4px 24px rgba(69,191,168,0.4), 0 0 0 16px rgba(69,191,168,0); }
-      100% { box-shadow: 0 4px 24px rgba(69,191,168,0.4), 0 0 0 0 rgba(69,191,168,0); }
+    @keyframes xc-pulse {
+      0% { box-shadow:0 4px 20px rgba(69,191,168,0.35),0 0 0 0 rgba(69,191,168,0.35); }
+      70% { box-shadow:0 4px 20px rgba(69,191,168,0.35),0 0 0 14px rgba(69,191,168,0); }
+      100% { box-shadow:0 4px 20px rgba(69,191,168,0.35),0 0 0 0 rgba(69,191,168,0); }
     }
-    #xynoia-chat-window {
-      position: fixed; bottom: 24px; right: 24px; z-index: 99999;
-      width: 400px; height: 620px; border-radius: 20px; overflow: hidden;
-      display: none; flex-direction: column;
-      background: #0B0E17;
-      border: 1px solid rgba(69,191,168,0.15);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(69,191,168,0.05);
+
+    /* === WINDOW === */
+    .xc-window {
+      position:fixed; bottom:28px; right:28px; z-index:99999;
+      width:380px; height:600px; border-radius:24px; overflow:hidden;
+      display:none; flex-direction:column;
+      background:#0c0f1a;
+      border:1px solid rgba(255,255,255,0.07);
+      box-shadow:0 25px 70px rgba(0,0,0,0.5);
     }
-    #xynoia-chat-window.open { display: flex; }
-    @media (max-width: 480px) {
-      #xynoia-chat-window {
-        width: 100vw; height: 100vh; height: 100dvh;
-        bottom: 0; right: 0; border-radius: 0;
-        border: none;
-      }
-      #xynoia-chat-bubble { bottom: 16px; right: 16px; width: 56px; height: 56px; }
-      #xynoia-chat-bubble svg { width: 24px; height: 24px; }
-      .xc-header { padding: 12px 16px; }
-      .xc-avatar { width: 36px; height: 36px; font-size: 17px; border-radius: 10px; }
-      .xc-name { font-size: 14px; }
-      .xc-status span { font-size: 11px; }
-      .xc-demo-bar { padding: 5px 12px; }
-      .xc-demo-bar span { font-size: 9px; letter-spacing: 1px; }
-      .xc-features { padding: 6px 12px 2px; gap: 4px; }
-      .xc-feature-pill { font-size: 9px; padding: 2px 7px; }
-      .xc-messages { padding: 10px 12px 6px; gap: 8px; }
-      .xc-msg-avatar { width: 24px; height: 24px; font-size: 12px; border-radius: 6px; }
-      .xc-bubble { max-width: 85%; padding: 9px 12px; font-size: 13px; line-height: 1.55; }
-      .xc-quick { padding: 4px 12px 4px; gap: 4px; }
-      .xc-quick-btn { padding: 5px 10px; font-size: 11px; }
-      .xc-input-area { padding: 8px 12px 6px; gap: 6px; }
-      .xc-input { padding: 10px 12px; font-size: 16px; border-radius: 12px; }
-      .xc-send { width: 38px; height: 38px; border-radius: 10px; }
-      .xc-disclaimer { padding: 4px 12px; font-size: 8.5px; }
-      .xc-footer { padding: 3px 12px 8px; font-size: 9px; }
-      .xc-close { padding: 8px 10px; font-size: 18px; }
-    }
+    .xc-window.open { display:flex; }
+
+    /* === HEADER === */
     .xc-header {
-      padding: 14px 18px;
-      background: linear-gradient(135deg, rgba(69,191,168,0.1), rgba(107,99,160,0.06));
-      border-bottom: 1px solid rgba(69,191,168,0.08);
-      display: flex; align-items: center; justify-content: space-between;
+      padding:20px 24px 16px;
+      background:linear-gradient(180deg,rgba(69,191,168,0.06) 0%,transparent 100%);
+      border-bottom:1px solid rgba(255,255,255,0.05);
+      display:flex; align-items:center; justify-content:space-between;
     }
-    .xc-header-info { display: flex; align-items: center; gap: 12px; }
+    .xc-header-left { display:flex; align-items:center; gap:14px; }
     .xc-avatar {
-      width: 42px; height: 42px; border-radius: 12px;
-      background: linear-gradient(135deg, #45BFA8, #3AA08A);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; box-shadow: 0 2px 12px rgba(69,191,168,0.3);
+      width:44px; height:44px; border-radius:50%;
+      background:linear-gradient(135deg,#45BFA8,#3AA08A);
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; box-shadow:0 2px 10px rgba(69,191,168,0.25);
     }
-    .xc-name { color: #E2E6EF; font-weight: 700; font-size: 14.5px; letter-spacing: 0.2px; }
-    .xc-status { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
-    .xc-status-dot {
-      width: 7px; height: 7px; border-radius: 50%; background: #45BFA8;
-      box-shadow: 0 0 8px rgba(69,191,168,0.8);
-      animation: xc-glow 2s ease-in-out infinite;
+    .xc-header-text h3 { color:#E8EBF2; font-size:15px; font-weight:700; }
+    .xc-header-text p { color:#6B7194; font-size:12px; font-weight:500; margin-top:2px; display:flex; align-items:center; gap:6px; }
+    .xc-online-dot { width:7px; height:7px; border-radius:50%; background:#45BFA8; box-shadow:0 0 6px rgba(69,191,168,0.7); }
+    .xc-close-btn {
+      background:none; border:none; color:#5A5F78; font-size:22px;
+      cursor:pointer; padding:4px; transition:color .2s; line-height:1;
     }
-    @keyframes xc-glow { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
-    .xc-status span { color: #7A8099; font-size: 11.5px; font-weight: 500; }
-    .xc-close {
-      background: rgba(255,255,255,0.05); border: none; color: #7A8099;
-      cursor: pointer; font-size: 16px; padding: 6px 8px; border-radius: 8px; transition: all 0.2s;
+    .xc-close-btn:hover { color:#E8EBF2; }
+
+    /* === DEMO BANNER === */
+    .xc-demo {
+      padding:8px 24px;
+      background:rgba(255,77,106,0.06);
+      border-bottom:1px solid rgba(255,77,106,0.06);
+      text-align:center;
     }
-    .xc-close:hover { background: rgba(255,255,255,0.1); color: #E2E6EF; }
-    .xc-demo-bar {
-      padding: 7px 16px;
-      background: linear-gradient(90deg, rgba(255,77,106,0.1), rgba(107,99,160,0.1));
-      border-bottom: 1px solid rgba(255,77,106,0.08);
-      text-align: center;
-    }
-    .xc-demo-bar span {
-      font-size: 10px; color: #FF4D6A; font-weight: 700;
-      letter-spacing: 1.5px; text-transform: uppercase;
-    }
-    .xc-demo-bar a { color: #45BFA8; text-decoration: none; font-weight: 700; }
-    .xc-demo-bar a:hover { text-decoration: underline; }
-    .xc-features {
-      padding: 8px 16px 4px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
-    }
-    .xc-features::-webkit-scrollbar { display: none; }
-    .xc-feature-pill {
-      padding: 3px 10px; border-radius: 20px;
-      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-      font-size: 10px; color: #5A5F78; font-weight: 500; white-space: nowrap;
-    }
+    .xc-demo span { font-size:10px; color:#FF6B81; font-weight:600; letter-spacing:1.2px; }
+    .xc-demo a { color:#45BFA8; text-decoration:none; font-weight:700; }
+    .xc-demo a:hover { text-decoration:underline; }
+
+    /* === MESSAGES === */
     .xc-messages {
-      flex: 1; overflow-y: auto; padding: 12px 14px 8px;
-      display: flex; flex-direction: column; gap: 10px;
+      flex:1; overflow-y:auto; padding:20px 20px 12px;
+      display:flex; flex-direction:column; gap:16px;
     }
-    .xc-messages::-webkit-scrollbar { width: 3px; }
-    .xc-messages::-webkit-scrollbar-track { background: transparent; }
-    .xc-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-    .xc-msg { display: flex; align-items: flex-end; gap: 8px; animation: xc-fadeIn 0.3s ease-out; }
-    .xc-msg-user { justify-content: flex-end; }
-    .xc-msg-bot { justify-content: flex-start; }
-    @keyframes xc-fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-    .xc-msg-avatar {
-      width: 26px; height: 26px; border-radius: 8px;
-      background: rgba(69,191,168,0.12);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; flex-shrink: 0;
+    .xc-messages::-webkit-scrollbar { width:3px; }
+    .xc-messages::-webkit-scrollbar-track { background:transparent; }
+    .xc-messages::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.06); border-radius:4px; }
+
+    .xc-msg { display:flex; align-items:flex-start; gap:10px; animation:xc-fadeIn .3s ease-out; }
+    .xc-msg-user { justify-content:flex-end; }
+    @keyframes xc-fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .xc-msg-icon {
+      width:30px; height:30px; border-radius:50%; flex-shrink:0;
+      background:rgba(69,191,168,0.1);
+      display:flex; align-items:center; justify-content:center; font-size:15px;
+      margin-top:2px;
     }
-    .xc-bubble {
-      max-width: 80%; padding: 10px 14px; font-size: 13px; line-height: 1.6; white-space: pre-wrap;
+    .xc-text {
+      max-width:75%; padding:12px 16px; font-size:14px; line-height:1.65; white-space:pre-wrap;
     }
-    .xc-bubble-bot {
-      border-radius: 16px 16px 16px 4px;
-      background: rgba(255,255,255,0.05); color: #D8DCE8;
-      border: 1px solid rgba(255,255,255,0.05);
+    .xc-text-bot {
+      background:rgba(255,255,255,0.05); color:#D0D5E4;
+      border-radius:4px 18px 18px 18px;
+      border:1px solid rgba(255,255,255,0.04);
     }
-    .xc-bubble-user {
-      border-radius: 16px 16px 4px 16px;
-      background: linear-gradient(135deg, #45BFA8, #3AA08A); color: #0B0E17; font-weight: 500;
+    .xc-text-user {
+      background:linear-gradient(135deg,#45BFA8,#38A693); color:#071210;
+      border-radius:18px 18px 4px 18px; font-weight:500;
     }
-    .xc-typing { display: flex; gap: 5px; padding: 12px 18px; }
-    .xc-typing-dot {
-      width: 6px; height: 6px; border-radius: 50%; background: #45BFA8;
-      animation: xc-bounce 1.2s ease-in-out infinite;
+
+    /* Typing */
+    .xc-typing-wrap { display:flex; align-items:flex-start; gap:10px; }
+    .xc-typing {
+      display:flex; gap:5px; padding:14px 20px;
+      background:rgba(255,255,255,0.05); border-radius:4px 18px 18px 18px;
+      border:1px solid rgba(255,255,255,0.04);
     }
-    .xc-typing-dot:nth-child(2) { animation-delay: 0.15s; }
-    .xc-typing-dot:nth-child(3) { animation-delay: 0.3s; }
-    @keyframes xc-bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-5px); } }
-    .xc-quick {
-      padding: 4px 14px 6px; display: flex; flex-wrap: wrap; gap: 5px;
+    .xc-dot {
+      width:7px; height:7px; border-radius:50%; background:#45BFA8; opacity:.5;
+      animation:xc-bounce 1.2s ease-in-out infinite;
     }
-    .xc-quick-btn {
-      padding: 5px 11px; border-radius: 20px;
-      background: rgba(69,191,168,0.06); border: 1px solid rgba(69,191,168,0.15);
-      color: #45BFA8; font-size: 11.5px; font-weight: 500;
-      cursor: pointer; transition: all 0.2s; font-family: inherit;
+    .xc-dot:nth-child(2){animation-delay:.15s}
+    .xc-dot:nth-child(3){animation-delay:.3s}
+    @keyframes xc-bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+    /* === QUICK QUESTIONS === */
+    .xc-quick { padding:4px 20px 8px; display:flex; flex-wrap:wrap; gap:6px; }
+    .xc-qbtn {
+      padding:7px 14px; border-radius:20px;
+      background:rgba(69,191,168,0.05); border:1px solid rgba(69,191,168,0.12);
+      color:#45BFA8; font-size:12.5px; font-weight:500;
+      cursor:pointer; transition:all .2s; font-family:inherit;
     }
-    .xc-quick-btn:hover { background: rgba(69,191,168,0.12); border-color: rgba(69,191,168,0.3); }
-    .xc-quick-btn:disabled { opacity: 0.4; cursor: default; }
-    .xc-input-area {
-      padding: 10px 14px 8px; border-top: 1px solid rgba(255,255,255,0.04);
-      display: flex; gap: 8px; align-items: flex-end;
+    .xc-qbtn:hover { background:rgba(69,191,168,0.1); border-color:rgba(69,191,168,0.25); }
+    .xc-qbtn:disabled { opacity:.35; cursor:default; }
+
+    /* === INPUT === */
+    .xc-input-wrap {
+      padding:12px 20px 10px;
+      border-top:1px solid rgba(255,255,255,0.04);
+      display:flex; gap:10px; align-items:center;
     }
     .xc-input {
-      flex: 1; padding: 10px 14px; border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03);
-      color: #E2E6EF; font-size: 13.5px; outline: none; font-family: inherit;
-      transition: border-color 0.2s;
+      flex:1; padding:12px 16px; border-radius:16px;
+      border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.03);
+      color:#E8EBF2; font-size:14px; outline:none; font-family:inherit;
+      transition:border-color .2s;
     }
-    .xc-input::placeholder { color: #3A3F55; }
-    .xc-input:focus { border-color: rgba(69,191,168,0.3); }
-    .xc-send {
-      width: 40px; height: 40px; border-radius: 12px; border: none;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+    .xc-input::placeholder { color:#3D4260; }
+    .xc-input:focus { border-color:rgba(69,191,168,0.25); }
+    .xc-send-btn {
+      width:42px; height:42px; border-radius:50%; border:none;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .2s; flex-shrink:0;
     }
-    .xc-send-active {
-      background: linear-gradient(135deg, #45BFA8, #3AA08A);
-      box-shadow: 0 2px 12px rgba(69,191,168,0.3);
+    .xc-send-btn.active {
+      background:linear-gradient(135deg,#45BFA8,#3AA08A);
+      box-shadow:0 2px 10px rgba(69,191,168,0.3);
     }
-    .xc-send-inactive { background: rgba(255,255,255,0.04); cursor: default; }
-    .xc-footer {
-      padding: 5px 14px 10px; text-align: center; font-size: 10px; color: #2A2F42;
+    .xc-send-btn.inactive { background:rgba(255,255,255,0.03); cursor:default; }
+    .xc-send-btn svg { width:18px; height:18px; fill:none; stroke-width:2.5; }
+
+    /* === FOOTER === */
+    .xc-bottom {
+      padding:6px 20px 14px; text-align:center;
+      font-size:10.5px; color:#2D3250; line-height:1.5;
     }
-    .xc-footer a { color: #45BFA8; font-weight: 700; text-decoration: none; letter-spacing: 0.5px; }
-    .xc-footer a:hover { text-decoration: underline; }
-    .xc-disclaimer {
-      padding: 6px 14px;
-      background: rgba(255,77,106,0.05);
-      border-top: 1px solid rgba(255,77,106,0.06);
-      text-align: center; font-size: 9.5px; color: #7A8099; line-height: 1.4;
+    .xc-bottom a { color:#45BFA8; font-weight:700; text-decoration:none; letter-spacing:.3px; }
+    .xc-bottom a:hover { text-decoration:underline; }
+    .xc-bottom .xc-disclaimer { font-size:9.5px; color:#3D4260; margin-bottom:4px; }
+
+    /* === MOBILE === */
+    @media(max-width:480px){
+      .xc-window {
+        width:100vw; height:100vh; height:100dvh;
+        bottom:0; right:0; border-radius:0; border:none;
+      }
+      .xc-bubble-wrap { bottom:20px; right:20px; }
+      .xc-bubble-btn { width:56px; height:56px; }
+      .xc-bubble-btn svg { width:22px; height:22px; }
+      .xc-header { padding:16px 20px 14px; }
+      .xc-avatar { width:40px; height:40px; font-size:20px; }
+      .xc-header-text h3 { font-size:14px; }
+      .xc-demo { padding:6px 20px; }
+      .xc-messages { padding:16px 16px 10px; gap:14px; }
+      .xc-msg-icon { width:28px; height:28px; font-size:14px; }
+      .xc-text { max-width:82%; padding:10px 14px; font-size:14px; }
+      .xc-quick { padding:4px 16px 6px; gap:5px; }
+      .xc-qbtn { padding:6px 12px; font-size:12px; }
+      .xc-input-wrap { padding:10px 16px 8px; gap:8px; }
+      .xc-input { padding:11px 14px; font-size:16px; border-radius:14px; }
+      .xc-send-btn { width:40px; height:40px; }
+      .xc-bottom { padding:4px 16px 12px; }
+      .xc-close-btn { font-size:24px; padding:6px; }
     }
   `;
   document.head.appendChild(style);
 
-  // Create widget container
   const widget = document.createElement('div');
   widget.id = 'xynoia-chat-widget';
   document.body.appendChild(widget);
 
   function render() {
     widget.innerHTML = '';
-    
-    // Lock body scroll on mobile when chat is open
     if (isOpen && window.innerWidth <= 480) {
       document.body.classList.add('xc-chat-open');
     } else {
@@ -229,143 +224,107 @@
     }
 
     if (!isOpen) {
-      // Bubble
       widget.innerHTML = `
-        <div style="position:fixed;bottom:24px;right:24px;z-index:99999">
-          <button id="xynoia-chat-bubble" aria-label="Chat öffnen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
+        <div class="xc-bubble-wrap">
+          <button class="xc-bubble-btn" id="xc-open" aria-label="Chat oeffnen">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </button>
-          <div id="xynoia-chat-badge">1</div>
+          <div class="xc-badge">1</div>
         </div>`;
-      document.getElementById('xynoia-chat-bubble').onclick = () => { isOpen = true; render(); };
+      document.getElementById('xc-open').onclick = () => { isOpen = true; render(); };
       return;
     }
 
-    // Chat window
-    let msgsHtml = messages.map((m, i) => {
+    let msgsHtml = messages.map(m => {
       if (m.role === 'assistant') {
-        return `<div class="xc-msg xc-msg-bot">
-          <div class="xc-msg-avatar">🦷</div>
-          <div class="xc-bubble xc-bubble-bot">${escapeHtml(m.content)}</div>
-        </div>`;
-      } else {
-        return `<div class="xc-msg xc-msg-user">
-          <div class="xc-bubble xc-bubble-user">${escapeHtml(m.content)}</div>
+        return `<div class="xc-msg">
+          <div class="xc-msg-icon">🦷</div>
+          <div class="xc-text xc-text-bot">${esc(m.content)}</div>
         </div>`;
       }
+      return `<div class="xc-msg xc-msg-user">
+        <div class="xc-text xc-text-user">${esc(m.content)}</div>
+      </div>`;
     }).join('');
 
     if (loading) {
-      msgsHtml += `<div class="xc-msg xc-msg-bot">
-        <div class="xc-msg-avatar">🦷</div>
-        <div class="xc-bubble xc-bubble-bot xc-typing">
-          <div class="xc-typing-dot"></div><div class="xc-typing-dot"></div><div class="xc-typing-dot"></div>
-        </div>
+      msgsHtml += `<div class="xc-typing-wrap">
+        <div class="xc-msg-icon">🦷</div>
+        <div class="xc-typing"><div class="xc-dot"></div><div class="xc-dot"></div><div class="xc-dot"></div></div>
       </div>`;
     }
 
     let quickHtml = '';
     if (msgCount < 2) {
       quickHtml = `<div class="xc-quick">${QUICK_QUESTIONS.map(q =>
-        `<button class="xc-quick-btn" ${loading ? 'disabled' : ''} data-q="${escapeAttr(q)}">${escapeHtml(q)}</button>`
+        `<button class="xc-qbtn" ${loading?'disabled':''} data-q="${escA(q)}">${esc(q)}</button>`
       ).join('')}</div>`;
     }
 
     widget.innerHTML = `
-      <div id="xynoia-chat-window" class="open">
+      <div class="xc-window open">
         <div class="xc-header">
-          <div class="xc-header-info">
+          <div class="xc-header-left">
             <div class="xc-avatar">🦷</div>
-            <div>
-              <div class="xc-name">Praxis Dr. Weber</div>
-              <div class="xc-status">
-                <div class="xc-status-dot"></div>
-                <span>KI-Assistent · Antwortet sofort</span>
-              </div>
+            <div class="xc-header-text">
+              <h3>Praxis Dr. Weber</h3>
+              <p><span class="xc-online-dot"></span> KI-Assistent · Online</p>
             </div>
           </div>
-          <button class="xc-close" id="xc-close-btn">✕</button>
+          <button class="xc-close-btn" id="xc-close">✕</button>
         </div>
-        <div class="xc-demo-bar">
-          <span>⚠ DEMO — Fiktive Praxis · Erstellt von <a href="https://www.xynoia.de" target="_blank">XYNOIA.DE</a></span>
+        <div class="xc-demo">
+          <span>⚠ DEMO — FIKTIVE PRAXIS · Erstellt von <a href="https://www.xynoia.de" target="_blank">XYNOIA.DE</a></span>
         </div>
-        <div class="xc-features">
-          <div class="xc-feature-pill">📅 Termine</div>
-          <div class="xc-feature-pill">💬 Beratung</div>
-          <div class="xc-feature-pill">🚨 Notfall</div>
-          <div class="xc-feature-pill">⭐ Bewertung</div>
-          <div class="xc-feature-pill">😰 Angstpatienten</div>
-        </div>
-        <div class="xc-messages" id="xc-messages">${msgsHtml}<div id="xc-scroll-anchor"></div></div>
+        <div class="xc-messages" id="xc-msgs">${msgsHtml}<div id="xc-anchor"></div></div>
         ${quickHtml}
-        <div class="xc-input-area">
-          <input class="xc-input" id="xc-input" placeholder="Ihre Nachricht..." ${loading ? 'disabled' : ''}>
-          <button class="xc-send ${(!loading) ? 'xc-send-active' : 'xc-send-inactive'}" id="xc-send-btn">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${loading ? '#3A3F55' : '#0B0E17'}" stroke-width="2.5">
+        <div class="xc-input-wrap">
+          <input class="xc-input" id="xc-in" placeholder="Ihre Nachricht..." ${loading?'disabled':''} autocomplete="off">
+          <button class="xc-send-btn ${loading?'inactive':'active'}" id="xc-send">
+            <svg viewBox="0 0 24 24" stroke="${loading?'#3D4260':'#071210'}">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
         </div>
-        <div class="xc-disclaimer">Dies ist eine KI-Demo von XYNOIA. Die Zahnarztpraxis Dr. Weber ist fiktiv. Keine echten Termine werden gebucht.</div>
-        <div class="xc-footer">Powered by <a href="https://www.xynoia.de" target="_blank">XYNOIA</a> · KI-Automatisierung</div>
+        <div class="xc-bottom">
+          <div class="xc-disclaimer">Demo von XYNOIA. Die Praxis Dr. Weber ist fiktiv. Keine echten Termine.</div>
+          Powered by <a href="https://www.xynoia.de" target="_blank">XYNOIA</a> · KI-Automatisierung
+        </div>
       </div>`;
 
-    // Event listeners
-    document.getElementById('xc-close-btn').onclick = () => { isOpen = false; render(); };
-
-    const inputEl = document.getElementById('xc-input');
-    const sendBtn = document.getElementById('xc-send-btn');
-
-    inputEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(inputEl.value); }
-    });
-    sendBtn.onclick = () => sendMsg(inputEl.value);
-
-    document.querySelectorAll('.xc-quick-btn').forEach(btn => {
-      btn.onclick = () => sendMsg(btn.dataset.q);
-    });
-
-    // Scroll to bottom
-    document.getElementById('xc-scroll-anchor').scrollIntoView({ behavior: 'smooth' });
-    if (!loading) inputEl.focus();
+    document.getElementById('xc-close').onclick = () => { isOpen = false; render(); };
+    const inp = document.getElementById('xc-in');
+    inp.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg(inp.value);} });
+    document.getElementById('xc-send').onclick = () => sendMsg(inp.value);
+    document.querySelectorAll('.xc-qbtn').forEach(b => { b.onclick = () => sendMsg(b.dataset.q); });
+    document.getElementById('xc-anchor').scrollIntoView({behavior:'smooth'});
+    if(!loading) inp.focus();
   }
 
   async function sendMsg(text) {
-    if (!text || !text.trim() || loading) return;
+    if(!text||!text.trim()||loading) return;
     text = text.trim();
-
-    messages.push({ role: 'user', content: text });
+    messages.push({role:'user',content:text});
     msgCount++;
     loading = true;
     render();
-
     try {
-      const apiMessages = messages.map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages })
+      const res = await fetch('/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({messages:messages.map(m=>({role:m.role,content:m.content}))})
       });
       const data = await res.json();
-      const reply = data.content?.[0]?.text || 'Entschuldigung, da ist etwas schiefgelaufen. Bitte rufen Sie uns an: 089 / 123 456 78';
-      messages.push({ role: 'assistant', content: reply });
-    } catch (err) {
-      messages.push({ role: 'assistant', content: 'Entschuldigung, die Verbindung wurde unterbrochen. Bitte versuchen Sie es später erneut.' });
+      messages.push({role:'assistant',content:data.content?.[0]?.text||'Entschuldigung, da ist etwas schiefgelaufen. Bitte rufen Sie uns an: 089 / 123 456 78'});
+    } catch(e) {
+      messages.push({role:'assistant',content:'Verbindung unterbrochen. Bitte versuchen Sie es erneut.'});
     }
-
     loading = false;
     render();
   }
 
-  function escapeHtml(t) {
-    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
-  }
-  function escapeAttr(t) {
-    return t.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+  function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');}
+  function escA(t){return t.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-  // Initial render
   render();
 })();
