@@ -286,7 +286,6 @@ function submitForm(){
   const m=document.getElementById('fmsg').value;
   if(!n||!e||!p){alert('Bitte Name, E-Mail und Telefon ausfüllen');return}
   
-  // Daten an Make.com Webhook senden
   const WEBHOOK_URL='https://hook.eu1.make.com/gfogbi9iqlycyluy4tm0mivkqhgydkzw';
   fetch(WEBHOOK_URL,{
     method:'POST',
@@ -318,5 +317,6 @@ function submitForm(){
   draw()
 })();
 </script>
+<script src="/chatbot.js"></script>
 </body>
 </html>
