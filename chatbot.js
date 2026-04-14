@@ -19,7 +19,8 @@
   // Inject styles
   const style = document.createElement('style');
   style.textContent = `
-    #xynoia-chat-widget * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+    #xynoia-chat-widget * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body.xc-chat-open { overflow: hidden; }
     #xynoia-chat-bubble {
       position: fixed; bottom: 24px; right: 24px; z-index: 99999;
       width: 64px; height: 64px; border-radius: 50%;
@@ -53,7 +54,32 @@
     }
     #xynoia-chat-window.open { display: flex; }
     @media (max-width: 480px) {
-      #xynoia-chat-window { width: calc(100vw - 16px); height: calc(100vh - 80px); bottom: 8px; right: 8px; border-radius: 16px; }
+      #xynoia-chat-window {
+        width: 100vw; height: 100vh; height: 100dvh;
+        bottom: 0; right: 0; border-radius: 0;
+        border: none;
+      }
+      #xynoia-chat-bubble { bottom: 16px; right: 16px; width: 56px; height: 56px; }
+      #xynoia-chat-bubble svg { width: 24px; height: 24px; }
+      .xc-header { padding: 12px 16px; }
+      .xc-avatar { width: 36px; height: 36px; font-size: 17px; border-radius: 10px; }
+      .xc-name { font-size: 14px; }
+      .xc-status span { font-size: 11px; }
+      .xc-demo-bar { padding: 5px 12px; }
+      .xc-demo-bar span { font-size: 9px; letter-spacing: 1px; }
+      .xc-features { padding: 6px 12px 2px; gap: 4px; }
+      .xc-feature-pill { font-size: 9px; padding: 2px 7px; }
+      .xc-messages { padding: 10px 12px 6px; gap: 8px; }
+      .xc-msg-avatar { width: 24px; height: 24px; font-size: 12px; border-radius: 6px; }
+      .xc-bubble { max-width: 85%; padding: 9px 12px; font-size: 13px; line-height: 1.55; }
+      .xc-quick { padding: 4px 12px 4px; gap: 4px; }
+      .xc-quick-btn { padding: 5px 10px; font-size: 11px; }
+      .xc-input-area { padding: 8px 12px 6px; gap: 6px; }
+      .xc-input { padding: 10px 12px; font-size: 16px; border-radius: 12px; }
+      .xc-send { width: 38px; height: 38px; border-radius: 10px; }
+      .xc-disclaimer { padding: 4px 12px; font-size: 8.5px; }
+      .xc-footer { padding: 3px 12px 8px; font-size: 9px; }
+      .xc-close { padding: 8px 10px; font-size: 18px; }
     }
     .xc-header {
       padding: 14px 18px;
@@ -194,6 +220,13 @@
 
   function render() {
     widget.innerHTML = '';
+    
+    // Lock body scroll on mobile when chat is open
+    if (isOpen && window.innerWidth <= 480) {
+      document.body.classList.add('xc-chat-open');
+    } else {
+      document.body.classList.remove('xc-chat-open');
+    }
 
     if (!isOpen) {
       // Bubble
